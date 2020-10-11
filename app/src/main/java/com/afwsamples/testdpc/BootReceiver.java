@@ -16,11 +16,14 @@
 
 package com.afwsamples.testdpc;
 
+import android.app.AlarmManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Process;
 import android.os.UserHandle;
+import android.util.Log;
+
 import com.afwsamples.testdpc.common.Util;
 import com.afwsamples.testdpc.comp.BindDeviceAdminServiceHelper;
 import com.afwsamples.testdpc.comp.DeviceOwnerService;
@@ -28,10 +31,17 @@ import com.afwsamples.testdpc.comp.IDeviceOwnerService;
 
 public class BootReceiver extends BroadcastReceiver {
 
+    private static final String TAG = "BootCompletedReceiver";
+
+    private AlarmManager mAlarmManager ;
     @Override
     public void onReceive(Context context, Intent intent) {
         final String action = intent.getAction();
         if (Intent.ACTION_BOOT_COMPLETED.equals(action)) {
+            Log.d(TAG, "Nitin TestDPC onReceive: " + intent.toString());
+            //Log.i("TestDPC", "Setting alarm for 20 seconds ");
+            //mAlarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+            //AlarmUtils.getInstance().setAlarm(mAlarmManager, context, true, true, true, 20 * 1000);
             if (!Util.isProfileOwner(context)
                     || Util.getBindDeviceAdminTargetUsers(context).size() == 0) {
                 return;

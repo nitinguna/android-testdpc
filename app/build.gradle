@@ -175,4 +175,5 @@ dependencies {
     testImplementation 'androidx.test:core:1.0.0'
     annotationProcessor "androidx.lifecycle:lifecycle-compiler:$lifecycle_version"
     compile 'com.google.apis:google-api-services-androidenterprise:v1-rev214-1.25.0'
+    compile 'com.squareup.retrofit2:retrofit:2.1.0'
 }

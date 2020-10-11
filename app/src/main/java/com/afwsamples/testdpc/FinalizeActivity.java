@@ -29,13 +29,9 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.afwsamples.testdpc.common.LaunchIntentUtil;
-import com.afwsamples.testdpc.common.PackageInstallationUtils;
 import com.afwsamples.testdpc.common.Util;
 import com.afwsamples.testdpc.provision.ProvisioningUtil;
 import com.android.setupwizardlib.GlifLayout;
-
-import java.io.IOException;
-import java.io.InputStream;
 
 import static android.app.admin.DevicePolicyManager.EXTRA_PROVISIONING_ADMIN_EXTRAS_BUNDLE;
 
@@ -92,12 +88,12 @@ public class FinalizeActivity extends Activity {
                 ? R.string.all_done_explanation_device_owner
                 : R.string.all_done_explanation_profile_owner);
 
-        try {
+       /* try {
             InputStream inputStream = getApplicationContext().getAssets().open("app-release.apk");
             PackageInstallationUtils.installPackage(getApplicationContext(), inputStream, "com.symbol.filesharingapp");
         } catch (IOException e) {
             e.printStackTrace();
-        }
+        }*/
     }
 
     private String getAddedAccountName() {

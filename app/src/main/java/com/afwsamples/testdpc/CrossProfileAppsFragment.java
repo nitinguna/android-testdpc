@@ -71,5 +71,6 @@ public class CrossProfileAppsFragment extends Fragment {
             view ->
                 mCrossProfileApps.startMainActivity(
                     new ComponentName(getActivity(), PolicyManagementActivity.class), userHandle));
+
     }
 }

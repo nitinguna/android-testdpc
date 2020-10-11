@@ -13,6 +13,7 @@ import android.net.MacAddress;
 import android.net.ProxyInfo;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -37,6 +38,13 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+
+import okhttp3.OkHttpClient;
+import okhttp3.ResponseBody;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
 
 import static android.app.admin.DevicePolicyManager.PERMISSION_GRANT_STATE_GRANTED;
 import static com.afwsamples.testdpc.DeviceAdminReceiver.getComponentName;
@@ -163,6 +171,45 @@ private static boolean isNetworkConfigured( Context context, WifiConfiguration w
 
 }
 
+    public static boolean saveWifiConfigurationDirect(
+            Context context, WifiConfiguration wifiConfiguration) {
+        Log.e("saveWifiConfigurationDirect", "> > > > wifiConfiguration: " + wifiConfiguration);
+
+        WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+        int networkId=INVALID_NETWORK_ID;
+        //if (wifiConfiguration.networkId == INVALID_NETWORK_ID)
+        if (!isNetworkConfigured(context,wifiConfiguration))
+        {
+            networkId = addWifiNetwork(wifiManager, wifiConfiguration);
+            wifiManager.enableNetwork(networkId,  false);
+            Log.e("AddNetwork direct", "> > > > networkId1: " + networkId);
+
+            WifiConfiguration wifiConfigUpdate = new WifiConfiguration();
+                wifiConfigUpdate.networkId = networkId;
+                ProxyInfo pr = ProxyInfo.buildDirectProxy("192.168.0.3", 8888);
+                wifiConfigUpdate.setHttpProxy(pr);
+                networkId = updateWifiNetwork(wifiManager, wifiConfigUpdate);
+                Log.e("Updating Proxy Direct", "> > > > networkId2: " + networkId);
+
+        } else {
+            Log.e("UpdateNetwork direct", "> > > > networkId1: " + wifiConfiguration.networkId);
+            WifiConfiguration wifiConfigUpdate = new WifiConfiguration();
+            wifiConfigUpdate.networkId = wifiConfiguration.networkId;
+
+                //wifiConfigUpdate.networkId = networkId;
+                ProxyInfo pr = ProxyInfo.buildDirectProxy("192.168.0.4", 8888);
+                wifiConfigUpdate.setHttpProxy(pr);
+                networkId = updateWifiNetwork(wifiManager, wifiConfigUpdate);
+                Log.e("updating proxy Direct", "> > > > networkId2: " + networkId);
+
+        }
+        if (networkId == INVALID_NETWORK_ID) {
+            return false;
+        }
+        wifiManager.enableNetwork(networkId, /* disableOthers= */ false);
+        return true;
+    }
+
     public static boolean saveWifiConfiguration(
             Context context, WifiConfiguration wifiConfiguration) {
         Log.e("saveWifiConfiguration", "> > > > wifiConfiguration: " + wifiConfiguration);
@@ -180,6 +227,7 @@ private static boolean isNetworkConfigured( Context context, WifiConfiguration w
             @SuppressLint("MissingPermission") List<WifiConfiguration> list = wifiManager.getConfiguredNetworks();
             for (WifiConfiguration config : list) {
                 if (config.networkId == networkId) {
+                    Log.e("AddNetwork", "> > > > Found " + config.SSID);
                     wifiConfigUpdate = config;
                     break;
                 }
@@ -204,8 +252,8 @@ private static boolean isNetworkConfigured( Context context, WifiConfiguration w
             }
 
             if (null != wifiConfigUpdate) {
-                wifiConfigUpdate.networkId = networkId;
-                ProxyInfo pr = ProxyInfo.buildDirectProxy("192.168.0.1", 8888);
+                //wifiConfigUpdate.networkId = networkId;
+                ProxyInfo pr = ProxyInfo.buildDirectProxy("192.168.0.2", 8888);
                 wifiConfigUpdate.setHttpProxy(pr);
                 networkId = updateWifiNetwork(wifiManager, wifiConfigUpdate);
                 Log.e("updating proxy", "> > > > networkId2: " + networkId);
@@ -259,6 +307,12 @@ private static boolean isNetworkConfigured( Context context, WifiConfiguration w
                     }
                 */
 
+                WifiConfiguration config1 = new WifiConfiguration();
+                config1.SSID = getQuotedString("B803_Airtel_Zerotouch_5G");
+                config1.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
+                config1.preSharedKey = getQuotedString("9341381313");
+                saveWifiConfigurationDirect(mContext,config1);
+
                 return true;
             case CREATE_FILE_SDCARD_KEY:
                 fileOperations();
@@ -298,12 +352,15 @@ private static boolean isNetworkConfigured( Context context, WifiConfiguration w
 
                 return true;
             case INSTALL_APP_FROM_ASSETS:
-                try {
+               /* try {
                     InputStream inputStream = getActivity().getAssets().open("app-release.apk");
                     PackageInstallationUtils.installPackage(mContext, inputStream, "com.symbol.filesharingapp");
                 } catch (IOException e) {
                     e.printStackTrace();
-                }
+                }*/
+                downloadZipFile();
+
+
 
                 return true;
         }
@@ -510,4 +567,143 @@ private static boolean isNetworkConfigured( Context context, WifiConfiguration w
         }
         return false;
     }
+
+    // retrofit download
+    private void downloadZipFile() {
+        //https://1000logos.net/wp-content/uploads/2016/10/Android-Logo.png
+        //https://drive.google.com/uc?export=download&id=18GVeeuVv8u4sGMltVagGkEAiHRyhitH6",
+        //RetrofitInterface downloadService = createService(RetrofitInterface.class, "https://1000logos.net/");
+        //Call<ResponseBody> call = downloadService.downloadFileByUrl("/wp-content/uploads/2016/10/Android-Logo.png");
+        //https://drive.google.com/file/d/10sBVIyE3X1lhtPcpHx8SmsdXxzS6XcZS/view?usp=sharing
+        RetrofitInterface downloadService = createService(RetrofitInterface.class, "https://drive.google.com/");
+        Call<ResponseBody> call = downloadService.downloadFileByUrl("uc?export=download&id=10sBVIyE3X1lhtPcpHx8SmsdXxzS6XcZS");
+
+        call.enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, final Response<ResponseBody> response) {
+                if (response.isSuccessful()) {
+                    Log.d(LOG_TAG, "Got the body for the file");
+
+                    new AsyncTask<Void, String, Boolean>() {
+                        @Override
+                        protected Boolean doInBackground(Void... voids) {
+                            publishProgress("RetroFit Success Saving file" );
+                            Boolean res = saveToDisk(response.body(), "abc.apk");
+                            return res;
+                        }
+
+                        protected void onProgressUpdate(String... s)
+                        {
+                            Log.d(LOG_TAG,s[0]);
+                        };
+
+                        protected void onPostExecute(Boolean result)
+                        {
+                            if (result == false)
+                            {
+                                Log.d(LOG_TAG,"onPostExecute[FAIL]: bitmap == null");
+                            }
+                            else
+                            {
+                                Log.d(LOG_TAG,"onPostExecute[+++ SUCCESS +++]");
+
+                                //ImageView imageView = (ImageView)m_form.findViewById(R.id.imageView);
+                                //imageView.setImageBitmap(result);
+                                try {
+                                    //destinationFile = new File(getActivity().getExternalFilesDir(null) + "abc.apk");
+                                    InputStream inputStream =  new FileInputStream(getActivity().getFilesDir() + "/abc.apk");
+                                    //InputStream inputStream =  new FileInputStream(getActivity().getExternalFilesDir(null) + "/abc.apk");
+                                    PackageInstallationUtils.installPackage(mContext, inputStream, "com.example.spr_37268_downloadmgr");
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                    }.execute();
+
+                } else {
+                    Log.d(LOG_TAG, "Connection failed " + response.errorBody());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+                t.printStackTrace();
+                Log.e(LOG_TAG, t.getMessage());
+            }
+        });
+
+    }
+
+    private boolean saveToDisk(ResponseBody body, String filename) {
+        File destinationFile;
+        try {
+            //new File("/data/data/" + m_form.getPackageName() + "/games").mkdir();
+            //File destinationFile = new File("/data/data/" + getPackageName() + "/games/" + filename);
+            //destinationFile = new File("/data/tmp/public/" + filename);
+
+            destinationFile = new File(getActivity().getFilesDir() + "/" +filename);
+
+           // destinationFile = new File(getActivity().getExternalFilesDir(null) + "/" +filename);
+
+            Log.d(LOG_TAG, "File path" + destinationFile.getAbsolutePath());
+            if (destinationFile.exists()){
+                destinationFile.delete();
+            }
+
+            InputStream is = null;
+            OutputStream os = null;
+
+            try {
+                long filesize = body.contentLength();
+                Log.d(LOG_TAG, "File Size=" + filesize);
+                is = body.byteStream();
+                os = new FileOutputStream(destinationFile);
+
+                byte data[] = new byte[4096];
+                int count;
+                int progress = 0;
+                while ((count = is.read(data)) != -1) {
+                    os.write(data, 0, count);
+                    progress +=count;
+                    Log.d(LOG_TAG, "Progress: " + progress + "/" + filesize + " >>>> " + (float) progress/filesize);
+                }
+
+                os.flush();
+
+                Log.d(LOG_TAG, "File saved successfully!");
+
+                //Bitmap bitmap = BitmapFactory.decodeStream(new FileInputStream(destinationFile));
+
+                return true;
+            } catch (IOException e) {
+                e.printStackTrace();
+                Log.d(LOG_TAG, "Failed to save the file!");
+                return false;
+            } finally {
+                if (is != null) is.close();
+                if (os != null) os.close();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            Log.d(LOG_TAG, "Failed to save the file!");
+            return false;
+        }
+    }
+
+
+
+    public <T> T createService(Class<T> serviceClass, String baseUrl) {
+        OkHttpClient client;
+
+        client = new OkHttpClient.Builder().build();
+
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(baseUrl)
+                .client(client)
+                .build();
+        return retrofit.create(serviceClass);
+    }
+
+
 }

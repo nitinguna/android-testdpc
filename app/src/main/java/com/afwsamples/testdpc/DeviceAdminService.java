@@ -19,6 +19,8 @@ public class DeviceAdminService extends android.app.admin.DeviceAdminService {
     private BroadcastReceiver mPackageChangedReceiver;
 
     private BroadcastReceiver mApkInstallerReceiver;
+   // private AlarmManager mAlarmManager ;
+
 
     @Override
     public void onCreate() {
@@ -45,11 +47,15 @@ public class DeviceAdminService extends android.app.admin.DeviceAdminService {
 
     private void registerApkInstallerReceiver() {
         IntentFilter intentFilter = new IntentFilter();
-        Log.i("Nitin", "Registering intent");
+
         intentFilter.addAction("com.afwsamples.testdpc.intent.action.INSTALL_APK");
 
         mApkInstallerReceiver = new ApkInstaller();
         getApplicationContext().registerReceiver(mApkInstallerReceiver, intentFilter);
+        //mAlarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        //AlarmUtils.getInstance().setAlarm(mAlarmManager, this, true, true, true, 20 * 1000);
+
+
     }
 
     private void unregisterPackageChangesReceiver() {
