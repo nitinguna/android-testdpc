@@ -13,7 +13,7 @@ import java.io.IOException;
 
 public class ApkInstaller extends BroadcastReceiver {
 
-    private static final String TAG = "ApkInstaller";
+    private static final String TAG = "TestDPC-WakeLock";
 
 
     @Override
@@ -34,6 +34,7 @@ public class ApkInstaller extends BroadcastReceiver {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+
 
 
         }

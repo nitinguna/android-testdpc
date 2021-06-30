@@ -84,6 +84,7 @@ public class GenerateKeyAndCertificateTask extends AsyncTask<Void, Integer, Atte
     @Override
     protected AttestedKeyPair doInBackground(Void... voids) {
         try {
+
             KeyGenParameterSpec.Builder keySpecBuilder =
                     new KeyGenParameterSpec.Builder(
                                     mAlias,

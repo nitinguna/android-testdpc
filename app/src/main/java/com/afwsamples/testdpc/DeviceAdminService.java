@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Build.VERSION_CODES;
+import android.os.PowerManager;
 import android.util.Log;
 
 import androidx.annotation.RequiresApi;
@@ -16,15 +17,33 @@ import androidx.annotation.RequiresApi;
 @RequiresApi(api = VERSION_CODES.O)
 public class DeviceAdminService extends android.app.admin.DeviceAdminService {
 
+    private final String TAG = "TestDPC-WakeLock";
+
     private BroadcastReceiver mPackageChangedReceiver;
 
     private BroadcastReceiver mApkInstallerReceiver;
+
+    private PowerManager.WakeLock wakeLock;
    // private AlarmManager mAlarmManager ;
+public Boolean getWakeLockState(){
+   return   wakeLock.isHeld();
+}
+
+private void acquireWakeLock()
+{
+    PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+    wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
+            "MyApp::MyWakelockTag");
+    Log.e(TAG,"Acquiring WakeLock");
+    wakeLock.acquire();
+}
+
 
 
     @Override
     public void onCreate() {
         super.onCreate();
+        acquireWakeLock();
         registerPackageChangesReceiver();
         registerApkInstallerReceiver();
     }
@@ -32,6 +51,9 @@ public class DeviceAdminService extends android.app.admin.DeviceAdminService {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        Log.e(TAG,"Releasing WakeLock");
+        wakeLock.release();
+
         unregisterPackageChangesReceiver();
         unregisterApkInstallerReceiver();
     }
